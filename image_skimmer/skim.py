@@ -1,7 +1,8 @@
 """Image Skimmer \\ Skim through images and organize on the fly"""
 
-import os
+import imghdr
 from collections import Counter
+import os
 from pprint import pprint
 import shutil
 import sys
@@ -52,11 +53,32 @@ def skim(src: str, dst: str, anno: str, exts: list = [".png", ".jpg", ".jpeg"]):
 
         if counter % 10 == 0 and counter != 0:
             print("!!...........CONGRATS..........!!")
-            print(f"You have -> {counter} <- images!")
+            print(f"You are at -> {counter} <- images!")
 
         # Get file extension
         file_ext = os.path.splitext(file)[-1].lower()
 
+        try:
+            # Get file type
+            file_type = imghdr.what(file)
+        except TypeError:  # TODO: Figure out exact error
+            if os.path.isfile(file):
+                confirm = input(f"\n{file} is not an image.\n-> Delete file? [Y/n]\n")
+                if confirm.lower() != "n":
+                    os.remove(file)  # Delete file
+                    files.remove(file)  # Remove from active files list
+                    # Don't increment counter, because removal shifts index
+                    print("\b File deleted.")
+                    continue
+                else:
+                    print("Exiting program...")
+                    sys.exit()
+            else:
+                print(f"{file} is a directory.")
+                counter += 1  # No change in file list, increment index
+                continue
+
+        # TODO: Clean up / merge the below and above blocks
         # Remove invalid file types
         if file_ext not in exts:
             if os.path.isfile(file):
@@ -79,7 +101,6 @@ def skim(src: str, dst: str, anno: str, exts: list = [".png", ".jpg", ".jpeg"]):
                 if confirm.lower() != "n":
                     os.remove(file)  # Delete file
                     files.remove(file)  # Remove from active files list
-                    # Don't increment counter, because removal shifts index
                     print("Deleted.")
                     continue
                 else:
